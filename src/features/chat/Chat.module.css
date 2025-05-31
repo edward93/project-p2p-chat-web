@@ -1,0 +1,23 @@
+.message {
+  margin: 0.5rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  max-width: 70%;
+  word-break: break-word;
+}
+
+/* Your messages */
+.mine {
+  background-color: #1e40af; /* Blue-800 */
+  color: white;
+  align-self: flex-end;
+  text-align: right;
+}
+
+/* Others' messages */
+.other {
+  background-color: #334155; /* Slate-700 */
+  color: white;
+  align-self: flex-start;
+  text-align: left;
+}
