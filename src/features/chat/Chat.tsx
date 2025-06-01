@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Button, Paper, Text, Box, TextInput } from "@mantine/core";
+import React, { useEffect, useState, useRef } from "react";
+import { TextInput, Button, Paper, Text, Box } from "@mantine/core";
 import styles from "./Chat.module.css";
 import { useNavigate } from "react-router-dom";
 
@@ -8,63 +8,48 @@ interface ChatProps {
   username: string;
 }
 
-interface Message {
-  username: string;
+interface ChatMessage {
+  user: string;
   text: string;
+  timestamp: number;
 }
 
-const Chat: React.FC<ChatProps> = ({ room, username }) => {
+export const Chat: React.FC<ChatProps> = ({ room, username }) => {
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
 
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const ws = new WebSocket(`${import.meta.env.VITE_API_WS_URL}/${room}`)
-    // const ws = new WebSocket(`ws://localhost:3000?room=${room}`);
+    console.log(`WS ${import.meta.env.VITE_API_WS_URL}`);
+    const ws = new WebSocket(import.meta.env.VITE_API_WS_URL);
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log(`🔌 Connected to room "${room}"`);
+      ws.send(JSON.stringify({ type: "join", room }));
     };
 
     ws.onmessage = (event) => {
-      try {
-        const data: Message = JSON.parse(event.data);
-        setMessages((prev) => [...prev, data]);
-      } catch (e) {
-        console.warn("Invalid message", e);
-      }
+      const msg: ChatMessage = JSON.parse(event.data);
+      setMessages((prev) => [...prev, msg]);
     };
 
-    ws.onerror = (err) => {
-      console.error("WebSocket error", err);
+    return () => {
+      ws.close();
     };
-
-    ws.onclose = () => {
-      console.log(`🔌 Disconnected from room "${room}"`);
-    };
-
-    return () => ws.close();
   }, [room]);
 
-  useEffect(() => {
-    // Auto scroll to bottom
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
   const sendMessage = () => {
-    if (!input.trim()) return;
-
-    const msg: Message = {
-      username,
-      text: input.trim(),
-    };
-
-    wsRef.current?.send(JSON.stringify(msg));
-    setInput("");
+    if (wsRef.current && message.trim()) {
+      const msg: ChatMessage = {
+        user: username,
+        text: message.trim(),
+        timestamp: Date.now(),
+      };
+      wsRef.current.send(JSON.stringify(msg));
+      setMessage("");
+    }
   };
 
   return (
@@ -81,12 +66,12 @@ const Chat: React.FC<ChatProps> = ({ room, username }) => {
           }}
         >
           {messages.map((msg, i) => {
-            const isMine = msg.username === username;
+            const isMine = msg.user === username;
             return (
               <div key={i} className={`${styles.message} ${isMine ? styles.mine : styles.other}`}>
                 {!isMine && (
                   <Text size="xs" c="dimmed">
-                    {msg.username}
+                    {msg.user}
                   </Text>
                 )}
                 <Text>{msg.text}</Text>
@@ -99,8 +84,8 @@ const Chat: React.FC<ChatProps> = ({ room, username }) => {
           <TextInput
             style={{ flex: 1 }}
             placeholder="Type your message"
-            value={input}
-            onChange={(e) => setInput(e.currentTarget.value)}
+            value={message}
+            onChange={(e) => setMessage(e.currentTarget.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") sendMessage();
             }}
