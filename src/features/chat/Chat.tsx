@@ -52,6 +52,17 @@ export const Chat: React.FC<ChatProps> = ({ room, username }) => {
     }
   };
 
+  /**
+   * Formats the timestamp of a message to a human-readable time string.
+   *
+   * @param timestamp - The timestamp of the message
+   * @returns
+   */
+  const formatTime = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
   return (
     <Box maw={600} mx="auto" mt="md">
       <Paper shadow="md" p="md" radius="md" withBorder>
@@ -69,11 +80,9 @@ export const Chat: React.FC<ChatProps> = ({ room, username }) => {
             const isMine = msg.user === username;
             return (
               <div key={i} className={`${styles.message} ${isMine ? styles.mine : styles.other}`}>
-                {!isMine && (
-                  <Text size="xs" c="dimmed">
-                    {msg.user}
-                  </Text>
-                )}
+                <Text size="xs" c="dimmed">
+                  {isMine ? formatTime(msg.timestamp) : `${msg.user} · ${formatTime(msg.timestamp)}`}
+                </Text>
                 <Text>{msg.text}</Text>
               </div>
             );
