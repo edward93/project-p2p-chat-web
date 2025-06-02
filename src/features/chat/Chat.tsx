@@ -12,11 +12,14 @@ interface ChatMessage {
   user: string;
   text: string;
   timestamp: number;
+  type?: string;
+  count?: number; // For peer count messages
 }
 
 export const Chat: React.FC<ChatProps> = ({ room, username }) => {
   const navigate = useNavigate();
 
+  const [peerCount, setPeerCount] = useState(0);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
@@ -32,7 +35,12 @@ export const Chat: React.FC<ChatProps> = ({ room, username }) => {
 
     ws.onmessage = (event) => {
       const msg: ChatMessage = JSON.parse(event.data);
-      setMessages((prev) => [...prev, msg]);
+
+      if (msg.type === "peer_count") {
+        setPeerCount(msg?.count ?? -1);
+      } else {
+        setMessages((prev) => [...prev, msg]);
+      }
     };
 
     return () => {
@@ -66,6 +74,9 @@ export const Chat: React.FC<ChatProps> = ({ room, username }) => {
   return (
     <Box maw={600} mx="auto" mt="md">
       <Paper shadow="md" p="md" radius="md" withBorder>
+        <Text size="sm" c="dimmed" mb="sm">
+          Connected peers: {peerCount}
+        </Text>
         <Box
           style={{
             display: "flex",
